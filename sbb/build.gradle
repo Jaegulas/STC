@@ -1,40 +1,71 @@
+
+// ==========================================================
+// build.gradle : 프로젝트 빌드 설정 파일 (Gradle)
+// - 어떤 플러그인을 쓸지, 어떤 라이브러리(의존성)를 받아올지, 자바 버전을 몇으로 할지 정합니다.
+// ==========================================================
+
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '4.1.1'
-	id 'io.spring.dependency-management' version '1.1.7'
+	id 'java' 												// 자바 프로젝트로 빌드합니다. (컴파일, 테스트, jar 생성)
+	id 'org.springframework.boot' version '3.3.12'  		// 스프링 부트 플러그인. 실행 가능한 jar 를 만들어 줍니다.
+	id 'io.spring.dependency-management' version '1.1.7'    // 라이브러리 버전을 스프링 부트 기준으로 자동 맞춰 줍니다.
 }
 
+// 프로젝트 그룹(패키지 기준 이름)과 버전
 group = 'com.mysite'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.1-SNAPSHOT'  // SNAPSHOT : 아직 개발 중인 버전이라는 표시
 
+// 자바 버전 설정
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
+		languageVersion = JavaLanguageVersion.of(21)    // Java 21 로 컴파일합니다.
 	}
 }
 
+// 라이브러리를 어디서 내려받을지 정합니다. mavenCentral() 은 자바 라이브러리의 대표 저장소입니다.
 repositories {
 	mavenCentral()
 }
 
+// [dependencies] 이 프로젝트가 사용하는 라이브러리 목록
+//   implementation        : 실행 + 컴파일에 모두 필요한 라이브러리
+//   testImplementation    : 테스트 코드에서만 필요한 라이브러리
+//   runtimeOnly           : 실행할 때만 필요한 라이브러리 (코드에서 직접 import 하지 않음)
+//   compileOnly           : 컴파일할 때만 필요한 라이브러리 (실행 때는 빠짐)
+//   annotationProcessor   : 컴파일 중에 코드를 자동 생성하는 도구 (Lombok 이 이것을 씁니다)
+//   developmentOnly       : 개발 중에만 쓰는 라이브러리 (운영 jar 에는 포함되지 않음)
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	// 웹 애플리케이션 기본 세트 (내장 톰캣, Spring MVC: @Controller, @GetMapping 등)
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	
+	// 테스트 기본 세트 (JUnit, @SpringBootTest 등)
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
+	// 개발 편의 도구 (코드 변경 시 자동 재시작 등)
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	
+	// Lombok : @Getter, @Setter, @RequiredArgsConstructor 등을 자동 생성해 줍니다.
 	compileOnly 'org.projectlombok:lombok' 
-    annotationProcessor 'org.projectlombok:lombok' 
+    annotationProcessor 'org.projectlombok:lombok'
     
-    // H2 데이터베이스 드라이버
+    // H2 : 파일 기반의 가벼운 자바 데이터베이스 (실행할 때만 필요, 직접 import 하지 않음)
     runtimeOnly 'com.h2database:h2'
-	
-	// H2 웹 콘솔(/h2-console) 모듈 - Spring Boot 4부터 별도 모듈로 분리함
-	// 이 줄이 없으면 /h2-console 경로가 만들어지지 않아 404 에러가 발생한다.
-	// (Spring Boot 3 기준 교재에는 없는 설정)
-	implementation 'org.springframework.boot:spring-boot-h2console'
-	
+    
+    // JPA(Spring Data JPA + Hibernate) : 자바 객체를 DB 테이블로 다루게 해 주는 기능
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    
+    testImplementation 'org.junit.jupiter:junit-jupiter' 
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
 }
 
+// 테스트를 실행할 때 JUnit 5 플랫폼을 사용하도록 설정합니다.
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+
+
+
+
+

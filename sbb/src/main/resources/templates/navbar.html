@@ -1,0 +1,53 @@
+
+
+
+
+<nav th:fragment="navbarFragment" class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">SBB</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                <!--
+					  [로그인 링크]
+					  sec:authorize="isAnonymous()"
+					    isAnonymous()  : 로그인을 안 했으면 true, 했으면 false
+					    sec:authorize  : true 이면 이 태그를 보여 주고, false 이면 지움
+					    → 결과: 로그인 안 한 사람에게만 [로그인] 링크가 보임
+					
+					  th:href="@{/user/login}"
+					    클릭하면 /user/login 주소로 이동합니다.
+					    1) Security 필터가 요청을 검사하고 통과시킵니다.
+					    2) UserController.java 의 login() 메서드가 실행됩니다.
+					    3) login() 메서드가 "login_form" 을 리턴합니다.
+					    4) login_form.html(로그인 화면)이 브라우저에 보입니다.
+					-->
+                  	<a class="nav-link" sec:authorize="isAnonymous()" th:href="@{/user/login}">로그인</a>
+                   
+                   <!--
+					  [로그아웃 링크]
+					  sec:authorize="isAuthenticated()"
+					    isAuthenticated() : 로그인을 했으면 true, 안 했으면 false
+					    sec:authorize     : true 이면 이 태그를 보여 주고, false 이면 지움
+					    → 결과: 로그인한 사람에게만 [로그아웃] 링크가 보임
+					
+					  th:href="@{/user/logout}"
+					    클릭하면 /user/logout 주소로 이동합니다.
+					    SecurityConfig.java 의 logout 설정이 실행되어
+					    로그인 정보를 지우고 첫 화면(/)으로 이동합니다.
+					    이동한 화면에서는 다시 [로그인] 링크가 보입니다.
+					-->                            
+                    <a class="nav-link" sec:authorize="isAuthenticated()" th:href="@{/user/logout}">로그아웃</a>
+                    
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/user/signup}">회원가입</a>
+                </li> 
+            </ul>
+        </div>
+    </div>
+</nav>

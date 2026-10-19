@@ -1,0 +1,39 @@
+
+
+<html layout:decorate="~{layout}">
+<div layout:fragment="content" class="container">
+	
+    <h5 class="my-3 border-bottom pb-2">질문등록</h5>
+	
+	<!-- 
+		[1] th:object="${questionForm}" 설명
+		- 이 <form>태그가 "questionForm"이라는 DTO역할을 하는 객체와 연결된다는 뜻입니다.
+		- 이 questionForm DTO객체는 QuestionController에서 현재 question_form.html화면으로 보내준
+		  질문 요청 데이터의 묶음입니다.
+		- 호출 흐름  :  사용자가 질문 등록 요청 POST  /question/create 주소로 요청하면
+		              QuestionController 가  비어있는 questionForm DTO객체들어 이 화면에 넘겨 줍니다.
+		- 저장 하기 버튼을 누르면 입력한 값이  이 questionForm DTO객체의 변수에 채워져 QuestionController로 돌아 갑니다.
+	 -->
+    <form th:action="@{/question/create}" th:object="${questionForm}" method="post">
+    
+    
+    	<div th:replace="~{form_errors :: formErrorsFragment}"></div>
+      
+    	
+        <div class="mb-3">
+            <label for="subject" class="form-label">제목</label>
+            <input type="text"  th:field="*{subject}"  class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="content" class="form-label">내용</label>
+            <textarea   th:field="*{content}"  class="form-control" rows="10"></textarea>
+        </div>
+        <input type="submit" value="저장하기" class="btn btn-primary my-2">
+    </form>
+	
+</div>
+</html>
+
+
+
+

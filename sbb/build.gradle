@@ -57,6 +57,33 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter' 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+	// Thymeleaf : 서버에서 HTML 화면을 만들어 주는 템플릿 엔진 (th:text, th:href 등의 문법)
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	
+	// 레이아웃 기능 : 공통 틀(layout.html)에 여러 화면을 끼워 넣는 기능 (layout:decorate, layout:fragment)
+    implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
+    
+    // 폼 입력값 유효성 검사 : @NotEmpty, @Size, @Eamil 등 (jakarta.validation)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    
+	// [Spring Security 라이브러리]
+	// 로그인, 로그아웃, 접근 제한 같은 보안 기능을 만들 때 쓰는 라이브러리입니다.
+	// 아래 클래스들은 이 라이브러리 안에 들어 있으며, SecurityConfig.java에서 가져다 씁니다.
+	//   HttpSecurity              : 보안 규칙을 하나씩 적어 넣는 설정 도구역할의 클래스 입니다.
+	//   SecurityFilterChain       : 완성된 보안 규칙 묶음(메소드들의 묶음)인 인터페이스 입니다.
+	//   PasswordEncoder           : 비밀번호를 암호문으로 바꾸는 메소드를 가지고 있는 인터페이스 입니다.
+	//   BCryptPasswordEncoder     : PasswordEncoder를 실제로 구현한 암호화 도구역할을 하는 클래스 입니다.
+	//   AuthenticationManager     : 아이디와 비밀번호가 맞는지 검사하는 담당자 역할을 하는 인터페이스 입니다.
+	//   UserDetailsService        : DB에서 회원 정보를 찾아 주는 메소드들을 가지고 있는 인터페이스 입니다.
+	//   UserDetails               : 회원 정보 한 명분을 담는 메소드를 가지고 있는 인터페이스 입니다.
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    
+    // [Thymeleaf-Spring Security 연결 라이브러리]
+	// HTML 화면에서 로그인 여부나 권한에 따라 내용을 다르게 보여 줄 때 쓰는 라이브러리입니다.
+	// 아래 클래스는 이 라이브러리 안에 들어 있습니다.
+	// SpringSecurityDialect   : 클래스 (HTML에서 sec: 문법을 읽을 수 있게 해 주는 클래스)
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
 }
 
 // 테스트를 실행할 때 JUnit 5 플랫폼을 사용하도록 설정합니다.

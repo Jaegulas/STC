@@ -15,6 +15,22 @@ public class MainController {
 		return "안녕하세요 sbb에 오신 것을 환영합니다.";
 	}
 	
+	// 요청 URL : http://localhost:8080/  요청을 하면
+	// GetMapping 어노테이션은 요청된 URL(/) 과의 매핑을 담당해서 매핑되는 root()메서드를 찾아 실행한다.
+	@GetMapping("/")
+	public String root() {
+		
+		// 리턴 문자열 redirect:/question/list는 /question/list URL로 페이지를 리다이렉트(재요청)하라는 명령어이다.
+		// 재요청 URL : http://localhost:8080/question/list  
+		return "redirect:/question/list";
+	}
+	
+	
 }
+
+
+
+
+
 
 

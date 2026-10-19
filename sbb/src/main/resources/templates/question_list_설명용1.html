@@ -1,0 +1,68 @@
+<table>
+    <thead>
+        <tr>
+            <th>제목</th>
+            <th>작성일시</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!--
+            1) 컨트롤러 흐름
+               - 브라우저가 질문 목록 URL을 요청하면
+               - QuestionController의 list() 메서드가 실행되고
+               - DB에서 질문 목록을 조회하여 List<Question> 형태로 만듭니다.
+               - model.addAttribute("questionList", questionList) 로
+                 Model에 "questionList"라는 이름표를 붙여 저장합니다.
+               - 그 다음 뷰(HTML 템플릿) 이름을 return 하면 타임리프가 이 HTML 파일을 읽어 데이터를 채워 넣습니다.
+
+            2) 타임리프가 Model 값을 읽는 방법
+               - Model에 저장할 때 쓴 속성명("questionList")을 ${questionList} 로 작성해 Model에 저장한 값을 그대로 읽습니다.
+        -->
+        <tr th:each="question : ${questionList}">
+            <!--
+                [th:each] 반복문 속성 (타임리프 문법)
+                - 형식: th:each="변수명 : ${리스트}"
+                - 의미: ${questionList}에 들어 있는 항목을 하나씩 꺼내 question이라는 변수에 넣고,
+                        이 <tr> 태그 전체를 항목 개수만큼 반복 출력합니다.
+                - 예) 질문이 3개면 <tr>이 3번 만들어집니다.
+                - 주의: 반복되는 대상은 이 <tr> 태그 자신입니다.
+                  th:each가 적힌 태그 하나가 복제되는 구조입니다.
+                - 반복 중 현재 항목은 question 변수로 접근합니다.
+            -->
+
+            <td>
+                <a th:href="@{|/question/detail/${question.id}|}"  th:text="${question.subject}">질문제목</a>
+                <!--
+                    [HTML 태그] <a> : 클릭하면 다른 페이지로 이동하는 링크
+                    아래 속성 두 개는 모두 타임리프 속성입니다.
+
+                    (1) th:href="@{|/question/detail/${question.id}|}"
+                        - th:href : 링크 주소(href)를 타임리프가 만든 값으로 바꿔 씁니다.
+                        - @{ ... } : 링크(URL) 전용 표현식입니다. 프로젝트 경로(context path)가 있으면 자동으로 앞에 붙여 줍니다.
+                        - |...| : 문자열 결합 기호입니다.
+                                  안에 있는 일반 글자와 ${...} 값을 합쳐 하나의 문자열로 만듭니다.
+                        - ${question.id} : 현재 반복 중인 question 객체의 getId() 값을 꺼냅니다.
+                        - 결과 예) 질문 번호(id)가 5라면 → /question/detail/5
+                        - 결국 각 행의 제목을 누르면 자기 질문 번호(id)의 상세 페이지 요청을 합니다.
+
+                    (2) th:text="${question.subject}"
+                        - th:text : 태그 안의 글자를 타임리프 값으로 바꿉니다.
+                        - ${question.subject} : question 객체의 getSubject() 값을 꺼냅니다.
+                        - 태그 안에 적힌 "질문제목"은 화면 설계용 샘플 글자입니다.
+                          타임리프가 실행되면 이 글자는 실제 제목으로 교체됩니다.
+                          (파일을 브라우저로 직접 열면 샘플 글자가 그대로 보입니다.)
+                -->
+            </td>
+            <td th:text="${question.createDate}"></td>
+            <!--
+                [HTML 태그 + 타임리프 속성] 두 번째 칸(작성일시 칸)
+                - th:text="${question.createDate}"
+                  → 현재 question 객체의 getCreateDate() 값을 <td></td> 사이에 넣어 브라우저에 출력합니다.
+            
+                - 날짜 객체를 그대로 출력하면 "2026-10-15T12:30:00" 같이 길게 보일 수 있습니다.
+                  보기 좋게 바꾸려면 아래처럼 쓸 수 있습니다.
+                  th:text="${#temporals.format(question.createDate, 'yyyy-MM-dd HH:mm')}"
+            -->   
+        </tr>
+    </tbody>
+</table>

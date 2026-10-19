@@ -11,6 +11,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import com.mysite.sbb.answer.Answer;
+import com.mysite.sbb.answer.AnswerRepository;
+import com.mysite.sbb.question.Question;
+import com.mysite.sbb.question.QuestionRepository;
+import com.mysite.sbb.question.QuestionService;
+
 import jakarta.transaction.Transactional;
 
 /*
@@ -26,6 +32,25 @@ class SbbApplicationTests {
 	@Autowired
     private AnswerRepository answerRepository; //<--- 답변 DB작업 용도
 
+    @Autowired
+    private QuestionService questionService; //<- 질문 기능 처리 부장 
+	
+	//테스트 12.  질문 300개 DB에 등록 테스트 (페이징 테스트용 데이터 만들기)
+    // 테스트 메서드를 실행하면 DB 의 question 테이블에 300개의 행이 INSERT 됩니다.
+	@Test
+    void testJpa() {
+		
+        for (int i = 1; i <= 300; i++) {
+            String subject = String.format("테스트 데이터입니다:[%03d]", i); //300개의 질문제목을 다르게 설정
+            String content = "내용무"; 									 //300개의 질문내용을 같게 설정
+            this.questionService.create(subject, content); //부장에게 질문제목과 질문내용을 전달해서 질문 정보 300개 INSERT 명령
+        }
+    }
+	
+	
+	
+	
+	
 	
 	/*
 	//테스트1. 질문 데이터들 DB에 저장 가능한지 테스트
@@ -250,6 +275,32 @@ class SbbApplicationTests {
 	}
 	*/
 	
+	// [테스트11. 설명] 지연 로딩(LAZY) 때문에 생기는 테스트 오류
+		// - QuestionRepository.findById 로 질문을 가져오면 DB 세션(연결)이 끝납니다.
+		// - 그 뒤에 q.getAnswerList() 를 호출하면, 답변 목록을 이제서야 DB 에서 가져오려고 하는데 세션이 이미 없습니다.
+		//   → LazyInitializationException 오류가 발생합니다.
+		// - 실제 웹 요청에서는 세션이 살아 있어서 생기지 않지만, 테스트 코드에서 자주 만나는 문제입니다.
+		// - 해결 방법 : 테스트 메서드에 @Transactional 을 붙이면 메서드가 끝날 때까지 세션이 유지됩니다.
+		/*
+		테스트 에러 발생 이유
+		-> 왜냐하면 QuestionRepository가 findById 메서드를 통해 Question 객체를 조회하고 나면
+		   DB 세션이 끊어지기 때문이다.
+		   그래서 그 이후에 실행되는 q.getAnswerList() 메서드(Question 객체로부터 answer 리스트를 구하는 메서드)는
+		   세션이 종료되어 오류가 발생한다.
+		   answerList는 앞서 q 객체를 조회할 때가 아니라
+		   q.getAnswerList() 메서드를 호출하는 시점에 가져오기 때문에 이와 같이 오류가 발생한 것이다.
+		   이렇게 데이터를 필요한 시점에 가져오는 방식을 지연(Lazy) 방식이라고 한다.
+		   이와 반대로 q 객체를 조회할 때 미리 answer 리스트를 모두 가져오는 방식은 즉시(Eager) 방식이라고 한다.
+		   @OneToMany, @ManyToOne 애너테이션의 옵션으로
+		   fetch=FetchType.LAZY 또는 fetch=FetchType.EAGER처럼 가져오는 방식을 설정할 수 있는데,
+		   이 책에서는 따로 지정하지 않고 항상 기본값(디폴트값)을 사용한다.
+		   사실 이 문제는 테스트 코드에서만 발생한다. 실제 서버에서 JPA 프로그램들을 실행할 때는 DB 세션이 종료되지 않아 이와 같은 오류가 발생하지 않는다.
+		   테스트 코드를 수행할 때 이런 오류를 방지할 수 있는 가장 간단한 방법은
+		   다음과 같이 @Transactional 애너테이션을 사용하는 것이다.
+		   @Transactional 애너테이션을 사용하면 메서드가 종료될 때까지 DB 세션이 유지된다. 코드를 수정해 보자.
+	*/
+	
+	/*
 	//테스트11. 질문에 달린 답변 목록 조회 테스트 
 	// 1) ID가 1번 질문 조회    2) 질문이 DB에 존재하는지 확인  3)  질문 객체 얻어오고 
 	// 4) 해당 질문에 달린 답변 목록을 가져옵니다.  5) 질문과 같이 조회된 답변이 1개인지 확인 
@@ -282,7 +333,7 @@ class SbbApplicationTests {
 		// 즉, 첫 번째(0번 인덱스)의 답변 내용이 우리가 저장했던 그 문장인지 확인합니다.
         assertEquals("네 자동으로 생성됩니다.", answerList.get(0).getContent());
 	}
-	
+	*/
 	
 	
 	

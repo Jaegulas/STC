@@ -108,7 +108,9 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 //Controller 메서드 단위로 권한 검사를 할 수 있게 켭니다.
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity(prePostEnabled = true)//@EnableMethodSecurity 애너테이션의 prePostEnabled = true는 
+											//QuestionController와 AnswerController에서 로그인 여부를 판별할 때 사용한 
+											//@PreAuthorize 애너테이션을 사용하기 위해 반드시 필요한 설정
 public class SecurityConfig {
 	
 	// ============================================================

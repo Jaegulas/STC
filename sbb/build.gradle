@@ -12,7 +12,7 @@ plugins {
 
 // 프로젝트 그룹(패키지 기준 이름)과 버전
 group = 'com.mysite'
-version = '0.0.1-SNAPSHOT'  // SNAPSHOT : 아직 개발 중인 버전이라는 표시
+version = '0.0.2'  // SNAPSHOT : 아직 개발 중인 버전이라는 표시
 
 // 자바 버전 설정
 java {
@@ -42,7 +42,7 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	
 	// 개발 편의 도구 (코드 변경 시 자동 재시작 등)
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	//developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	
 	// Lombok : @Getter, @Setter, @RequiredArgsConstructor 등을 자동 생성해 줍니다.
 	compileOnly 'org.projectlombok:lombok' 
@@ -83,6 +83,9 @@ dependencies {
 	// 아래 클래스는 이 라이브러리 안에 들어 있습니다.
 	// SpringSecurityDialect   : 클래스 (HTML에서 sec: 문법을 읽을 수 있게 해 주는 클래스)
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    
+    //마크다운을 HTML로 바꾸는 외부 라이브러리(commonmark) 0.21.0 버전을 프로젝트에 추가(CommonUtil.java에서 사용)
+    implementation 'org.commonmark:commonmark:0.21.0'
 
 }
 

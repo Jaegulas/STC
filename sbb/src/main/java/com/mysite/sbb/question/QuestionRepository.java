@@ -2,7 +2,10 @@ package com.mysite.sbb.question;
 
 import java.util.List;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -154,6 +157,62 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
 	 *
 	 */
 	Page<Question> findAll(Pageable pageable);
+	
+	
+	//===========================================================================================
+	//검색 조건(spec)에 맞는 질문을 찾아, 하단에 클릭한 페이지(pageable)번호의 화면에 보일 질문 목록만 조회해서 돌려주는 기능
+	//결론 : 검색과 페이징을 한 번에 조회 처리 하는 메소드.
+	//=============================================================================================
+	// [반환 타입] Page<Question>
+	// 메서드 실행이 끝나면 호출한 곳으로 돌려주는 값의 자료형입니다.
+	// Page는 "한 페이지 분량의 질문 목록"과 "페이지 정보(전체 건수, 전체 페이지 수, 현재 페이지 번호 등)"를 함께 담는 객체입니다.
+	// <Question>은 Page 안에 담기는 데이터가 Question 객체라는 뜻입니다.
+	//
+	// [메서드 이름] findAll
+	// 조건에 맞는 데이터 목록을 찾아 가져오라는 뜻입니다.
+	// findAll이라는 이름이 같아도 매개변수의 개수와 자료형이 다르면 별개의 메서드로 구분됩니다. 이를 오버로딩이라고 합니다.
+	//
+	// [첫 번째 매개변수] Specification<Question> spec
+	// Specification<Question> : 검색 조건을 담는 객체의 자료형입니다. <Question>은 Question 테이블을 대상으로 한다는 뜻입니다.
+	// spec : 변수 이름입니다. 호출하는 쪽이 search(kw)의 결과를 넣습니다.
+	// 이 객체 안에는 조인 방법(FROM 부분)과 검색 조건(WHERE 부분)이 들어 있습니다.
+	// 예) spec = search("자바") 이면 제목, 내용, 작성자 등에 "자바"가 포함된 질문을 찾는 조건입니다.
+	// 주의: spec은 조회 결과가 아니라 "이렇게 찾으라"는 조건 설계도입니다.
+	//
+	// [두 번째 매개변수] Pageable pageable
+	// Pageable : 페이지 요청 정보를 담는 객체의 자료형입니다.
+	// pageable : 변수 이름입니다. 보통 PageRequest.of(...)로 만들어 넘깁니다.
+	// 담고 있는 정보는 다음과 같습니다.
+	//   1) 몇 번째 페이지인지 (0부터 시작하며, 0이 첫 페이지입니다)
+	//   2) 한 페이지에 몇 개씩 가져올지
+	//   3) 정렬 기준 (예: 작성일 내림차순)
+	// 예) PageRequest.of(0, 10) 이면 첫 페이지를 10개씩 가져오라는 요청입니다.
+	// 이 값은 SQL의 LIMIT(몇 개를)과 OFFSET(몇 개를 건너뛸지) 부분을 만드는 데 쓰입니다.	
+	Page<Question> findAll(Specification<Question> spec, Pageable pageable);
+	
+	/*
+	여기서는 @Query 애너테이션이 적용된 findAllByKeyword 메서드를 추가했다. 
+	앞에서 살펴본 쿼리를 @Query로 구현한 것이다. 
+	이때 @Query는 반드시 테이블 기준이 아닌 엔티티 기준으로 작성해야 한다. 
+	즉, site_user와 같은 테이블명 대신 SiteUser처럼 엔티티명을 사용해야 하고, 
+	조인문에서 보듯이 q.author_id=u1.id와 같은 컬럼명 대신 q.author=u1처럼 엔티티의 속성명을 사용해야 한다.
+
+	그리고 @Query에 매개변수로 전달할 kw 문자열은 메서드의 매개변수에 @Param("kw")처럼 @Param 애너테이션을 사용해야 한다. 
+	검색어를 의미하는 kw 문자열은 @Query 안에서 :kw로 참조된다.	
+	*/
+    @Query("select "
+            + "distinct q "
+            + "from Question q " 
+            + "left outer join SiteUser u1 on q.author=u1 "
+            + "left outer join Answer a on a.question=q "
+            + "left outer join SiteUser u2 on a.author=u2 "
+            + "where "
+            + "   q.subject like %:kw% "
+            + "   or q.content like %:kw% "
+            + "   or u1.username like %:kw% "
+            + "   or a.content like %:kw% "
+            + "   or u2.username like %:kw% ")
+    Page<Question> findAllByKeyword(@Param("kw") String kw, Pageable pageable);
 	
 	
 }

@@ -43,7 +43,7 @@ class SbbApplicationTests {
         for (int i = 1; i <= 300; i++) {
             String subject = String.format("테스트 데이터입니다:[%03d]", i); //300개의 질문제목을 다르게 설정
             String content = "내용무"; 									 //300개의 질문내용을 같게 설정
-            this.questionService.create(subject, content); //부장에게 질문제목과 질문내용을 전달해서 질문 정보 300개 INSERT 명령
+            this.questionService.create(subject, content, null); //부장에게 질문제목과 질문내용을 전달해서 질문 정보 300개 INSERT 명령
         }
     }
 	

@@ -1,8 +1,10 @@
 package com.mysite.sbb.answer;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import com.mysite.sbb.question.Question;
+import com.mysite.sbb.user.SiteUser;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,6 +12,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
@@ -125,6 +128,81 @@ public class Answer { //답변 엔티티 클래스 (answer 테이블과 1:1 연�
 	//     이 프로젝트는 EAGER 를 사용합니다. 주석 처리된 LAZY 예시는 적지 않았습니다.
     @ManyToOne //(fetch = FetchType.EAGER) // 즉시 로딩 (답변을 읽을 때 질문도 함께 읽음)
     private Question question; //이 답변이 달린 부모 질문 객체  
+    
+	// ─────────────────────────────────────────────────────────────────────
+	// 변수 5. author (이 답변을 작성한 회원)  ─ N : 1 관계
+	// ─────────────────────────────────────────────────────────────────────
+
+	// [author 변수의 역할]
+	//   - 이 답변을 작성한 회원 객체(SiteUser)를 저장하는 변수입니다.
+	//   - 사용 예) answer.getAuthor().getUsername()  → 답변 작성자 아이디
+	//   - Question 엔티티의 author 변수와 같은 방법으로 추가했습니다.
+	//
+	// [@ManyToOne]
+	//   - Many = 답변(Answer) 여러 개, One = 회원(SiteUser) 한 명
+	//   - 회원 한 명이 답변을 여러 개 작성할 수 있는 관계입니다. (N : 1)
+	//   - 답변 하나의 작성자는 회원 한 명입니다.
+	//
+	// [DB 테이블에 생기는 열]
+	//   - answer 테이블에 author_id 열이 자동으로 추가됩니다.
+	//       author_id  bigint   ← site_user 테이블의 id 값을 저장 (외래키 FK)
+	//   - 열 이름 : 변수 이름(author) + "_" + site_user 의 기본키 이름(id)
+	//   - 열 타입 : SiteUser 의 id 가 Long 이므로 bigint
+	//   - DB 에는 회원 객체가 아니라 회원 번호(숫자)만 저장됩니다.
+	//
+	//   answer 테이블 예시
+	//     id | content          | question_id | author_id
+	//     1  | 네 맞습니다         | 1           | null    ← author 추가 전에 저장된 답변
+	//     2  | 이렇게 해 보세요     | 1           | 2       ← site_user.id = 2 인 회원이 작성
+	//
+	// [조회할 때 실행되는 SQL]
+	//   - @ManyToOne 의 기본값은 EAGER(즉시 로딩)입니다.
+	//   - 답변을 조회하면 site_user 테이블을 LEFT JOIN 으로 함께 가져와 author 변수에 넣습니다.
+	//   - 위 변수 4 설명의 SQL 에서 아래 줄이 이 author 변수 때문에 실행되는 부분입니다.
+	//       left join site_user a2_0 on a2_0.id=a1_0.author_id
+	//
+	// [값이 저장되는 순서]
+	//   1) AnswerController.java 의 createAnswer() 메서드가
+	//      Principal principal 매개변수로 로그인한 사용자 아이디를 받습니다.
+	//   2) UserService.getUser(principal.getName()) 를 호출해 SiteUser 객체를 조회합니다.
+	//   3) AnswerService.create(question, content, siteUser) 를 호출합니다.
+	//   4) create() 메서드 안에서 answer.setAuthor(siteUser) 로 이 변수에 저장합니다.
+	//   5) answerRepository.save(answer) 실행 시 아래 SQL 이 실행됩니다.
+	//       insert into answer (author_id, content, create_date, modify_date, question_id, id)
+	//       values (2, ?, ?, ?, ?, default)
+	//
+	// [주의]
+	//   - author 를 추가하기 전에 저장된 답변은 author_id 가 null 입니다.
+	//   - 템플릿에서 answer.author.username 을 바로 쓰면 오류가 나므로
+	//     th:if="${answer.author != null}" 로 먼저 확인해야 합니다.    
+    @ManyToOne
+    private SiteUser author; // 답변 작성자 (answer.author_id → site_user.id)
+    
+    
+    private LocalDateTime modifyDate; //답변 수정 일시 
+    
+	//@ManyToMany : 다대다(N : N) 관계를 나타내는 애너테이션입니다.
+	//  답변 1개는 여러 회원에게 추천(voter)을 받을 수 있고,
+	//  회원 1명은 여러 답변을 추천할 수 있습니다.
+	//  두 테이블의 열만으로는 이 관계를 표현할 수 없으므로,
+	//  중간 연결 테이블(answer_voter)이 자동으로 하나 생성됩니다.
+	//  기본 로딩 방식은 LAZY(지연 로딩)입니다.
+	//  voter 목록을 실제로 사용하는 순간에만 DB 에서 가져옵니다.
+	@ManyToMany	
+	//Set<SiteUser> voter : 이 답변을 추천한 회원들의 모음입니다.
+	//  · Set 타입 : 같은 원소가 두 번 들어갈 수 없습니다.
+	//    → 같은 회원이 같은 답변을 여러 번 추천해도 목록에는 한 번만 남습니다.
+	//  · SiteUser : 추천한 회원 객체입니다.
+	//    DB 에는 회원 객체 전체가 아니라 회원 번호(site_user.id)만 저장됩니다.
+	//  · 변수 이름 voter : "투표자(추천한 사람)"이라는 뜻입니다.
+	//  · 추천 수는 voter.size() 로 구합니다.
+    Set<SiteUser> voter;
+	/*
+	참고. @ManyToMany	
+	author 변수 추가할 때와 달리 ANSWER_VOTER라는 테이블이 생성된 것을 확인할 수 있다. 
+	이렇게 @ManyToMany 애너테이션을 사용해 다대다 관계로 속성을 생성하면 새로운 ANSWER_VOTER라는 테이블을 만들어 관련 데이터를 관리한다. 
+	여기서 생성된 테이블의 인덱스 항목을 펼쳐 보면 서로 연관된 엔티티의 고유 번호(즉, ID)가 기본키로 설정되어 다대다 관계임을 알 수 있다.
+	*/
 }
 
 

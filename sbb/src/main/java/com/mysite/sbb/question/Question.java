@@ -2,8 +2,10 @@ package com.mysite.sbb.question;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import com.mysite.sbb.answer.Answer;
+import com.mysite.sbb.user.SiteUser;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -11,6 +13,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
@@ -79,6 +83,77 @@ public class Question { // 질문 하나의 정보를 저장할 용도의  질�
     @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE)
     private List<Answer> answerList; //이 질문에 달린 답변 목록 
     
+	// ============================================================
+	// [연관관계 2] 회원(SiteUser) 1 : 질문(Question) N  →  @ManyToOne
+	// ============================================================
+	//
+	// [author 변수의 역할]
+	//   이 질문을 작성한 회원 정보를 저장하는 변수입니다.
+	//   타입이 SiteUser 이므로, 회원 객체 하나를 저장합니다.
+	//   사용 예) question.getAuthor().getUsername()  → 작성자 아이디
+	//
+	// [@ManyToOne 의 뜻]
+	//   Many = 질문(Question) 여러 개
+	//   One  = 회원(SiteUser) 한 명
+	//   → 회원 한 명이 질문을 여러 개 작성할 수 있다는 관계입니다.
+	//   → 질문 하나의 작성자는 반드시 회원 한 명입니다.
+	//
+	// [DB 테이블에 생기는 열]
+	//   question 테이블에 author_id 열이 자동으로 추가됩니다.
+	//     author_id  bigint   ← site_user 테이블의 id 값을 저장 (FK: 외래키)
+	//   · 열 이름 : 변수 이름(author) + "_" + 상대 테이블의 기본키 이름(id)
+	//   · 열 타입 : SiteUser 의 id 가 Long 이므로 bigint
+	//   · DB 에는 회원 객체가 아니라 회원 번호(숫자)만 저장됩니다.
+	//
+	//   question 테이블 예시
+	//     id | subject          | author_id
+	//     1  | sbb가 무엇인가요?   | null       ← author 추가 전에 저장된 질문
+	//     2  | JPA 질문입니다      | 1          ← site_user.id = 1 인 회원이 작성
+	//
+	// [조회할 때 실행되는 SQL]
+	//   @ManyToOne 은 기본값이 EAGER(즉시 로딩)입니다.
+	//   질문을 조회하면 site_user 테이블을 LEFT JOIN 으로 함께 조회해서
+	//   author 변수에 SiteUser 객체를 넣어 줍니다.
+	//     select q.*, a.* from question q
+	//     left join site_user a on a.id = q.author_id
+	//     where q.id = ?
+	//
+	// [값이 저장되는 곳]
+	//   1) QuestionController.java 의 questionCreate() 에서
+	//      Principal principal 매개변수로 로그인한 사용자 아이디를 받습니다.
+	//   2) UserService.getUser(principal.getName()) 를 호출해 SiteUser 객체를 조회합니다.
+	//   3) QuestionService.create(subject, content, siteUser) 에서
+	//      question.setAuthor(siteUser) 로 이 변수에 저장합니다.
+	//   4) questionRepository.save(question) 실행 시
+	//      insert into question (..., author_id, ...) values (..., 1, ...) 가 실행됩니다.
+	//
+	// [주의]
+	//   author 를 추가하기 전에 저장된 질문은 author_id 가 null 입니다.
+	//   템플릿에서 question.author.username 을 바로 쓰면 오류가 나므로
+	//   th:if="${question.author != null}" 로 먼저 확인해야 합니다.
+    @ManyToOne
+    private SiteUser author;
+    
+    
+    private LocalDateTime modifyDate; //질문 수정 일시 
+    
+	//@ManyToMany : 다대다(N : N) 관계를 나타내는 애너테이션입니다.
+	//  질문 1개는 여러 회원에게 추천(voter)을 받을 수 있고,
+	//  회원 1명은 여러 질문을 추천할 수 있습니다.
+	//  두 테이블의 열만으로는 이 관계를 표현할 수 없으므로,
+	//  중간 연결 테이블(question_voter)이 자동으로 하나 생성됩니다.
+	//  기본 로딩 방식은 LAZY(지연 로딩)입니다.
+	//  voter 목록을 실제로 사용하는 순간에만 DB 에서 가져옵니다.
+    @ManyToMany
+	//Set<SiteUser> voter : 이 질문을 추천한 회원들의 모음입니다.
+	//  · Set 타입 : 같은 원소가 두 번 들어갈 수 없습니다.
+	//    → 같은 회원이 같은 질문을 여러 번 추천해도 목록에는 한 번만 남습니다.
+	//    (List 였다면 중복 추천이 그대로 쌓였을 것입니다.)
+	//  · SiteUser : 추천한 회원 객체입니다.
+	//    DB 에는 회원 객체 전체가 아니라 회원 번호(site_user.id)만 저장됩니다.
+	//  · 변수 이름 voter : "투표자(추천한 사람)"이라는 뜻입니다.
+	//  · 추천 수는 voter.size() 로 구합니다.
+    Set<SiteUser> voter;
 }
 
 

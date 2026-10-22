@@ -9,18 +9,35 @@
 <html layout:decorate="~{layout}">
 
 <div  layout:fragment="content"   class="container my-3">
+
+	<!-- 질문 목록 위 검색어 입력 해서 요청 하는 곳 -->
+    <div class="row my-3">
+        <div class="col-6">
+            <a th:href="@{/question/create}" class="btn btn-primary">질문 등록하기</a>
+        </div>
+        <div class="col-6">
+            <div class="input-group">
+                <input type="text" id="search_kw" class="form-control" th:value="${kw}">
+                <button class="btn btn-outline-secondary" type="button" id="btn_search">찾기</button>
+            </div>
+        </div>
+    </div>
+
     <table class="table">
         <thead class="table-dark">
-            <tr>
-                <th>번호</th>
-                <th>제목</th>
-                <th>작성일시</th>
-            </tr>
+          <tr class="text-center">
+		    <th>번호</th>
+		    <th style="width:50%">제목</th>
+		    <th>글쓴이</th>
+		    <th>작성일시</th>
+		  </tr>
         </thead>
         <tbody>
-            <tr th:each="question, loop : ${paging}">           
-            	<td th:text="${paging.getTotalElements - (paging.number * paging.size) - loop.index}"></td>               
-                <td>
+            <tr  class="text-center"    th:each="question, loop : ${paging}">           
+            
+            	<td th:text="${paging.getTotalElements - (paging.number * paging.size) - loop.index}"></td>    
+            	           
+                <td class="text-start">
                     <a th:href="@{|/question/detail/${question.id}|}" th:text="${question.subject}"></a>
                     
                     <!-- th:if="${#lists.size(question.answerList) > 0}"로 답변이 있는지 조사하고, -->
@@ -31,6 +48,54 @@
                     </span>
                     
                 </td>
+                
+                <!--/*
+					[글쓴이 칸] 질문 작성자의 아이디를 출력합니다.
+				
+					[question 변수는 어디서 왔나]
+					  위의 <tr th:each="question, loop : ${paging}"> 반복문에서
+					  paging(조회된 질문 10개) 중 질문 1개씩을 question 변수에 넣습니다.
+					  paging 은 QuestionController.java 의 list() 메서드에서
+					  model.addAttribute("paging", paging) 로 전달한 값입니다.
+				
+					[question.author 의 값은 어디서 왔나]
+					  Question.java 의 @ManyToOne private SiteUser author; 변수입니다.
+					  질문 목록을 조회할 때 @ManyToOne 기본값(EAGER) 때문에
+					  site_user 테이블을 LEFT JOIN 으로 함께 조회해서 author 변수에 SiteUser 객체를 넣어 둡니다.
+					    left join site_user a on a.id = q.author_id
+				
+					[th:if="${question.author != null}"]
+					  question.author : Question 객체의 author 변수 값 (getAuthor() 호출 결과)
+					  != null         : 값이 비어 있지 않은지 검사합니다.
+					  - true  : 작성자가 있음 → 이 span 태그를 출력합니다.
+					  - false : 작성자가 없음 → 이 span 태그를 HTML 에서 삭제합니다.
+					  작성자가 없는 경우
+					    author 변수를 추가하기 전에 저장한 질문은 DB 의 author_id 가 NULL 이므로
+					    question.author 도 null 입니다.
+				
+					[th:if 가 없으면 생기는 오류]
+					  author 가 null 인데 question.author.username 을 실행하면
+					  null 에서 username 을 꺼내려고 해서 오류(SpelEvaluationException)가 발생하고
+					  질문 목록 화면 전체가 오류 화면으로 바뀝니다.
+				
+					[th:text="${question.author.username}"]
+					  question.author          : 작성자 SiteUser 객체 (getAuthor() 호출)
+					  question.author.username : 그 객체의 username 변수 값 (getUsername() 호출)
+					  → 작성자 아이디 문자열을 span 태그 안에 출력합니다.
+					  getAuthor(), getUsername() 메서드는 각 엔티티의 @Getter 가 자동으로 만든 메서드입니다.
+				
+					[td 가 아니라 span 에 th:if 를 붙인 이유]
+					  td 에 th:if 를 붙이면 작성자가 없을 때 td 칸 자체가 사라져서
+					  표의 칸 개수가 맞지 않고, 작성일시가 글쓴이 칸으로 밀립니다.
+					  td 는 항상 출력하고, 안쪽 span 만 출력하거나 삭제해서 칸 위치를 유지합니다.
+				
+					[브라우저가 받는 HTML 예시]
+					  작성자 있음 : <td><span>user1</span></td>
+					  작성자 없음 : <td></td>
+				*/-->
+                <td><span th:if="${question.author != null}" th:text="${question.author.username}"></span></td>
+                
+                
                 <td th:text="${#temporals.format(question.createDate, 'yyyy-MM-dd HH:mm')}"></td>
             </tr>  
         </tbody>
@@ -64,8 +129,7 @@
 					    : 현재 페이지 번호(paging.number)에서 1을 뺀 번호로 이동합니다.
 					    주소는 같은 목록 주소에 ?page=번호 만 붙입니다. 예) /question/list?page=1
 				*/-->
-                <a class="page-link"
-                    th:href="@{|?page=${paging.number-1}|}">
+                <a class="page-link" href="javascript:void(0)" th:data-page="${paging.number-1}">
                     <span>이전</span>
                 </a>
             </li>
@@ -93,7 +157,7 @@
 					  th:text="${page}" : 버튼에 보일 페이지 번호입니다.
 					  th:href="@{|?page=${page}|}" : 클릭하면 그 페이지 번호로 이동합니다.
 				*/-->
-                <a th:text="${page}" class="page-link" th:href="@{|?page=${page}|}"></a>              
+                <a th:text="${page}" class="page-link" href="javascript:void(0)" th:data-page="${page}"></a>              
             </li>
             
             
@@ -103,7 +167,7 @@
 					  다음 페이지가 없으면(hasNext 가 false 이면) disabled 가 붙어 누를 수 없게 됩니다.
 					  th:href="@{|?page=${paging.number+1}|}" : 현재 번호에서 1을 더한 페이지로 이동합니다.
 			*/-->         
-                <a class="page-link" th:href="@{|?page=${paging.number+1}|}">
+                <a class="page-link" href="javascript:void(0)" th:data-page="${paging.number+1}">
                     <span>다음</span>
                 </a>
             </li>
@@ -111,11 +175,64 @@
         </ul>
     </div>
     <!-- 페이징처리 끝 -->
+
     
+    <!-- 입력한 검색어 + 페이지번호로 질문 목록 조회 요청하는 폼  -->
+    <!-- 
+   		 GET 방식으로 요청해야 하므로 method 속성에 'get'을 설정했다. 
+   		 kw와 page는 이전에 요청했던 값을 기억하고 있어야 하므로 value에 값을 유지할 수 있도록 했다. 
+   		 이전에 요청했던 kw와 page의 값은 컨트롤러로부터 다시 전달받는다. 
+   		 그리고 action 속성에는 폼이 전송되는 URL이므로 질문 목록 URL인 /question/list를 지정했다.
+     -->
+    <form th:action="@{/question/list}" method="get" id="searchForm">
+        <input type="hidden" id="kw" name="kw" th:value="${kw}">
+        <input type="hidden" id="page" name="page" th:value="${paging.number}">
+    </form>
     
-	<a th:href="@{/question/create}" class="btn btn-primary">질문 등록하기</a>
+    <script layout:fragment="script" type='text/javascript'>
+   
+    	// <a>이전</a>, <a>페이지번호</a>, <a>다음</a> 을 모두 유사배열에 담아 선택해 옵니다. 
+		const page_elements = document.getElementsByClassName("page-link");
+		
+    	//[<a>이전</a>, <a>페이지번호</a>, <a>다음</a>].forEach(function(element)){
+
+		Array.from(page_elements).forEach(function(element) {
+			
+				//3번 반복해서  <a>이전</a>, <a>페이지번호</a>, <a>다음</a> 들에 click 이벤트 각각 등록하고 click이벤트가 발생하면 function 실행
+		        element.addEventListener('click', function() { 
+
+				       //click한 <a th:data-page="${page}">페이지번호</a>의 
+					   //th:data-page 속성에 설정된 페이지번호값을 
+					   //dataset속성.page으로 가져와  
+					   //<input type="hidden" id="page" name="page" th:value="${paging.number}">의
+					   //th:value속성에 값으로 설정한다.
+				        document.getElementById('page').value = this.dataset.page;
+		        	      									   
+		        	    //위 작성한 <form th:action="@{/question/list}" method="get" id="searchForm"></form>을 이용해 
+		        	    //질문목록 조회 요청함	   
+				        document.getElementById('searchForm').submit();
+				        
+		    		}//function(){}
+		        );
+		});
+		
+		//질문목록 검색을 위해 검색어를 입력한 상태에서 찾기 버튼에 클릭 이벤트를 등록해서   
+		//1.입력한 검색어를 위 <input type="hidden" id="kw" th:value="">에 설정
+		//2.입력한 검색어에 해당하는 질문 목록을 하단의 0페이지 화면에 보이게  <input type="hidden" id="page" name="page" th:value="">에 0설정 
+		//3. 위 작성한 <form th:action="@{/question/list}" method="get" id="searchForm"></form>을 이용해 질문목록 조회 요청함
+		const btn_search = document.getElementById("btn_search");
+		btn_search.addEventListener('click', function() {
+		    document.getElementById('kw').value = document.getElementById('search_kw').value;
+		    document.getElementById('page').value = 0;  // 검색버튼을 클릭할 경우 0페이지부터 조회한다.
+		    document.getElementById('searchForm').submit();
+		});
+	</script>
+   
 </div>
 </html>
+
+
+
 
 
 
